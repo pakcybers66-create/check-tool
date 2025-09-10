@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>testing tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --main-color: rgb(0, 150, 255);
+            --secondary-color: rgb(0, 75, 128);
+            --error-color: #ff0041;
+            --text-color: #fff;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: #0d0d0d;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+
+        .login-container {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 2px solid var(--main-color);
+            box-shadow: 0 0 15px var(--main-color);
+            max-width: 400px;
+            width: 90%;
+            padding: 2.5rem;
+            color: var(--main-color);
+            text-align: center;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            animation: pulse-border 2s infinite alternate;
+        }
+
+        @keyframes pulse-border {
+            from {
+                border-color: var(--main-color);
+                box-shadow: 0 0 15px var(--main-color);
+            }
+            to {
+                border-color: var(--secondary-color);
+                box-shadow: 0 0 10px var(--secondary-color);
+            }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            text-shadow: 0 0 5px var(--main-color);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            text-align: left;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--main-color);
+            color: var(--main-color);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            box-shadow: 0 0 10px var(--main-color);
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        
+        .input-group input::placeholder {
+            color: rgba(0, 150, 255, 0.5);
+        }
+
+        .password-container {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--main-color);
+            transition: color 0.3s ease;
+        }
+        
+        .password-toggle:hover {
+            color: var(--secondary-color);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--main-color);
+            color: #0d0d0d;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+            box-shadow: 0 0 10px var(--main-color);
+        }
+
+        /* Button click animation */
+        @keyframes button-pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 150, 255, 0.7);
+            }
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(0, 150, 255, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 150, 255, 0);
+            }
+        }
+
+        .button-pulse {
+            animation: button-pulse 0.5s ease-in-out;
+        }
+        
+        .toggle-link {
+            text-decoration: underline;
+            color: var(--main-color);
+            cursor: pointer;
+            margin-top: 1rem;
+            display: block;
+        }
+
+        .message {
+            margin-top: 1rem;
+            color: var(--main-color);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .message.show {
+            opacity: 1;
+        }
+
+        .form-section {
+            display: none;
+        }
+        
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive styles for smaller screens */
+        @media (max-width: 500px) {
+            .login-container {
+                padding: 1.5rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="matrixCanvas"></canvas>
+
+    <div class="login-container">
+        <h1 id="formTitle">LOGIN // SYSTEM ACCESS</h1>
+        <p class="mb-6 text-sm text-center" id="formSubtitle">Please enter your credentials to proceed.</p>
+        
+        <!-- Login Form -->
+        <div id="loginSection" class="form-section active">
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="username">USERNAME or EMAIL:</label>
+                    <input type="text" id="username" name="username" placeholder="USERNAME or EMAIL" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">PASSWORD:</label>
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" placeholder="********" required>
+                        <span class="password-toggle" data-target="password">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.577 3.01 9.964 7.822a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.577-3.01-9.964-7.822z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <button type="submit">ACCESS GRANTED</button>
+            </form>
+            <a href="#" class="toggle-link" id="showSignup">Don't have an account? Sign up.</a>
+        </div>
+        
+        <!-- Signup Form -->
+        <div id="signupSection" class="form-section">
+            <form id="signupForm">
+                 <div class="input-group">
+                    <label for="signupUsername">USERNAME:</label>
+                    <input type="text" id="signupUsername" name="signupUsername" placeholder="enter your username" required>
+                </div>
+                 <div class="input-group">
+                    <label for="signupEmail">EMAIL:</label>
+                    <input type="email" id="signupEmail" name="signupEmail" placeholder="enter your email" required>
+                </div>
+                <div class="input-group">
+                    <label for="signupPassword">PASSWORD:</label>
+                    <div class="password-container">
+                        <input type="password" id="signupPassword" name="signupPassword" placeholder="********" required>
+                        <span class="password-toggle" data-target="signupPassword">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.577 3.01 9.964 7.822a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.577-3.01-9.964-7.822z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label for="confirmPassword">CONFIRM PASSWORD:</label>
+                    <div class="password-container">
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="********" required>
+                        <span class="password-toggle" data-target="confirmPassword">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.577 3.01 9.964 7.822a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.577-3.01-9.964-7.822z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <button type="submit">CREATE ACCOUNT</button>
+            </form>
+            <a href="#" class="toggle-link" id="showLogin">Already have an account? Log in.</a>
+        </div>
+        
+        <p id="message" class="message"></p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        const loginSection = document.getElementById('loginSection');
+        const signupSection = document.getElementById('signupSection');
+        const formTitle = document.getElementById('formTitle');
+        const formSubtitle = document.getElementById('formSubtitle');
+        const messageDisplay = document.getElementById('message');
+        const loginForm = document.getElementById('loginForm');
+        const signupForm = document.getElementById('signupForm');
+        const showLoginLink = document.getElementById('showLogin');
+        const showSignupLink = document.getElementById('showSignup');
+
+        let streams = [];
+        const fontSize = 16;
+        const columns = Math.floor(window.innerWidth / fontSize);
+
+        // A simple object to act as a temporary database for registered users
+        const registeredUsers = {};
+
+        class Symbol {
+            constructor(x, y, isFirst, isFirstSymbol) {
+                this.x = x;
+                this.y = y;
+                this.isFirst = isFirst;
+                this.text = '0';
+                this.isFirstSymbol = isFirstSymbol;
+                this.setToRandomSymbol();
+            }
+
+            setToRandomSymbol() {
+                setTimeout(() => {
+                    this.text = String.fromCharCode(0x30A0 + Math.random() * 96);
+                }, Math.random() * 500);
+            }
+
+            draw() {
+                ctx.fillStyle = this.isFirst ? 'var(--text-color)' : 'var(--main-color)';
+                ctx.font = `${fontSize}px 'VT323'`;
+                ctx.fillText(this.text, this.x, this.y);
+                this.setToRandomSymbol();
+            }
+        }
+
+        class Stream {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.symbols = [];
+                this.symbols.push(new Symbol(this.x, this.y, Math.random() < 0.98, true));
+                for (let i = 1; i < Math.random() * 20 + 10; i++) {
+                    this.symbols.push(new Symbol(this.x, this.y - i * fontSize, false, false));
+                }
+            }
+
+            draw() {
+                this.symbols.forEach(symbol => symbol.draw());
+                this.symbols[0].y += fontSize;
+                if (this.symbols[0].y > canvas.height) {
+                    this.symbols.forEach(symbol => symbol.y = symbol.y - canvas.height);
+                }
+            }
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            streams = [];
+            for (let i = 0; i < columns; i++) {
+                streams.push(new Stream(i * fontSize, -canvas.height));
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            streams.forEach(stream => stream.draw());
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        function showMessage(text, isSuccess) {
+            messageDisplay.textContent = text;
+            messageDisplay.style.color = isSuccess ? 'var(--main-color)' : 'var(--error-color)';
+            messageDisplay.classList.add('show');
+            setTimeout(() => {
+                messageDisplay.classList.remove('show');
+            }, 3000);
+        }
+
+        function showSection(section) {
+            loginSection.classList.remove('active');
+            signupSection.classList.remove('active');
+            section.classList.add('active');
+            messageDisplay.textContent = '';
+        }
+
+        // Event listener for showing signup form
+        showSignupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            formTitle.textContent = 'CREATE // NEW USER';
+            formSubtitle.textContent = 'Enter your details to create a new account.';
+            showSection(signupSection);
+        });
+
+        // Event listener for showing login form
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            formTitle.textContent = 'LOGIN // SYSTEM ACCESS';
+            formSubtitle.textContent = 'Please enter your credentials to proceed.';
+            showSection(loginSection);
+        });
+
+        // Function to handle button click animation
+        function addButtonPulse(button) {
+            button.classList.add('button-pulse');
+            setTimeout(() => {
+                button.classList.remove('button-pulse');
+            }, 500); // Match animation duration
+        }
+
+        // Event listener for login form submission
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = e.target.username.value;
+            const password = e.target.password.value;
+
+            addButtonPulse(e.submitter);
+            
+            showMessage('ACCESSING SYSTEM...', true);
+            
+            setTimeout(() => {
+                const user = registeredUsers[username.toLowerCase()];
+                if (user && user.password === password) {
+                    showMessage('ACCESS GRANTED.', true);
+                    loginForm.reset();
+                } else {
+                    showMessage('ACCESS DENIED. INCORRECT CREDENTIALS.', false);
+                }
+            }, 2000);
+        });
+
+        // Event listener for signup form submission
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = e.target.signupUsername.value;
+            const email = e.target.signupEmail.value;
+            const password = e.target.signupPassword.value;
+            const confirmPassword = e.target.confirmPassword.value;
+
+            addButtonPulse(e.submitter);
+
+            if (password !== confirmPassword) {
+                showMessage('ERROR. PASSWORDS DO NOT MATCH.', false);
+                return;
+            }
+            
+            showMessage('CREATING ACCOUNT...', true);
+            
+            setTimeout(() => {
+                // Store the new user data
+                registeredUsers[username.toLowerCase()] = {
+                    username: username,
+                    email: email,
+                    password: password
+                };
+
+                // Store email as a key as well for "email or username" login
+                registeredUsers[email.toLowerCase()] = {
+                    username: username,
+                    email: email,
+                    password: password
+                };
+                
+                showMessage('ACCOUNT CREATED. YOU MAY NOW LOG IN.', true);
+                signupForm.reset();
+                formTitle.textContent = 'LOGIN ';
+                formSubtitle.textContent = 'You can now log in with your new account.';
+                showSection(loginSection);
+            }, 2000);
+        });
+        
+        // Password toggle functionality
+        document.querySelectorAll('.password-toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const targetId = toggle.getAttribute('data-target');
+                const passwordInput = document.getElementById(targetId);
+                const svg = toggle.querySelector('svg');
+
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    // Change to a visible icon (e.g., open eye)
+                    svg.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.98 12c0 1.944.474 3.829 1.343 5.397m5.176-7.859a2.25 2.25 0 103.182 3.182M19.497 19.497a10.477 10.477 0 001.98-7.497c0-1.944-.474-3.829-1.343-5.397M12 12h.008v.008H12z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                    `;
+                } else {
+                    passwordInput.type = 'password';
+                    // Change to a hidden icon (e.g., closed eye)
+                    svg.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.577 3.01 9.964 7.822a1.012 1.012 0 010 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.577-3.01-9.964-7.822z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    `;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
